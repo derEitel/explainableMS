@@ -203,3 +203,11 @@ class Normalize(object):
         image = self.apply_transform(image)
         image[img_mask] = 0.
         return image
+
+def shuffle_data(X, y):
+    """ Shuffle the dataset. """
+    shuffled_idx = np.array(range(len(X)))
+    np.random.shuffle(shuffled_idx)
+    X = X[shuffled_idx]
+    y = y[shuffled_idx]
+    return X, y
