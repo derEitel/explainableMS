@@ -53,11 +53,13 @@ def load_nifti(file_path, dtype=np.float32, incl_header=False, z_factor=None, ma
 
 # transforms
 
-def normalize_float(x):
+def normalize_float(x, is_3d_mri=True):
     """ 
-    Function that performs min-max normalization on a `numpy.ndarray` 
+    Function that performs max-division normalization on a `numpy.ndarray` 
     matrix. 
     """
+    if is_3d_mri:
+        assert(len(x.shape) >= 4)
     for i in range(x.shape[0]):
         x[i] /= np.max(x[i])
     return x
