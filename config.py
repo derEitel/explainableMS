@@ -15,6 +15,7 @@ import os
 root_dir = "/analysis/share/Ritter/MS"
 # data folder
 data_dir = os.path.join(root_dir, "CIS")
+doc_dir = os.path.join(root_dir, "Test", "file_list_HC_MS_BET_FLAIR.csv")
 
 # uncomment if data contains NANs and you wish to remove them
 # remove_nan = True

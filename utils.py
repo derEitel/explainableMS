@@ -2,6 +2,8 @@ import numpy as np
 import nibabel as nib
 from scipy.ndimage.interpolation import zoom
 from sklearn.metrics import recall_score
+from keras.models import Sequential
+from keras.layers import Dense
 
 # data loading
 def load_nifti(file_path, dtype=np.float32, incl_header=False, z_factor=None, mask=None):
@@ -213,3 +215,17 @@ def shuffle_data(X, y):
     X = X[shuffled_idx]
     y = y[shuffled_idx]
     return X, y
+
+def replace_classifier(model, activation='softmax', units=2):
+    """
+    Replace the last layer of you model with a new Dense layer.
+    Arguments:
+        activation: new activation function
+        units: number of outputs units, needs to be equal to 
+            number of classes. in binary case set to 1.
+    """
+    model_new = Sequential()
+    for layer in model.layers[:-1]:
+        model_new.add(layer)
+    model_new.add(Dense(units=units, activation=activation))
+    return model_new
