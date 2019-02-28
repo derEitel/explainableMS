@@ -2,8 +2,7 @@ import numpy as np
 import nibabel as nib
 from scipy.ndimage.interpolation import zoom
 from sklearn.metrics import recall_score
-from keras.models import Sequential
-from keras.layers import Dense
+
 
 # data loading
 def load_nifti(file_path, dtype=np.float32, incl_header=False, z_factor=None, mask=None):
@@ -224,6 +223,9 @@ def replace_classifier(model, activation='softmax', units=2):
         units: number of outputs units, needs to be equal to 
             number of classes. in binary case set to 1.
     """
+    from keras.models import Sequential
+    from keras.layers import Dense
+    
     model_new = Sequential()
     for layer in model.layers[:-1]:
         model_new.add(layer)
