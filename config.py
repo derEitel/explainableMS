@@ -12,7 +12,7 @@ import os
 
 ##### general parameters #####
 # main project folder
-root_dir = "/analysis/share/Ritter/Dataset/MS"
+root_dir = "/analysis/ritter/data/MS"
 # data folder
 data_dir = os.path.join(root_dir, "CIS")
 doc_dir = os.path.join(root_dir, "Test", "file_list_HC_MS_BET_FLAIR.csv")
