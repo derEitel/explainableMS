@@ -5,7 +5,7 @@ from sklearn.metrics import recall_score
 
 
 # data loading
-def load_nifti(file_path, dtype=np.float32, incl_header=False, z_factor=None, mask=None):
+def load_nifti(file_path, dtype=np.float32, incl_header=False, z_factor=None, mask=None, zoom_mode="cubic"):
     """
     Loads a volumetric image in nifti format (extensions .nii, .nii.gz etc.)
     as a 3D numpy.ndarray.
@@ -45,7 +45,14 @@ def load_nifti(file_path, dtype=np.float32, incl_header=False, z_factor=None, ma
         struct_arr *= mask
         
     if z_factor is not None:
-        struct_arr = zoom(struct_arr, z_factor)
+        if zoom_mode == "cubic":
+            struct_arr = zoom(struct_arr, z_factor, order=3)
+        elif zoom_mode == "bilinear":
+            struct_arr = zoom(struct_arr, z_factor, order=1)
+        elif zoom_mode == "nearest":
+            struct_arr = zoom(struct_arr, z_factor, order=0)
+        else:
+            struct_arr = zoom(struct_arr, z_factor, order=2)
     
     if incl_header:
         return struct_arr, img
@@ -231,3 +238,13 @@ def replace_classifier(model, activation='softmax', units=2):
         model_new.add(layer)
     model_new.add(Dense(units=units, activation=activation))
     return model_new
+
+def get_labels_dict(path):
+    import xmltodict
+    with open(path) as f:
+        labels_xml = xmltodict.parse(f.read())['atlas']['data']['label']
+
+    labels_dict = {}
+    for row in labels_xml:
+        labels_dict[int(row['index'])] = row['name']
+    return labels_dict
