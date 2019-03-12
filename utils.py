@@ -248,3 +248,40 @@ def get_labels_dict(path):
     for row in labels_xml:
         labels_dict[int(row['index'])] = row['name']
     return labels_dict
+
+def heatmap_per_region(hm, atlas, positive=True, size_normalize=False):
+    # get heatmap mean per region
+    # use only positive values
+    signed_hm = np.copy(hm)
+    if positive:
+        signed_hm[signed_hm<0] = 0
+    else:
+        signed_hm[signed_hm>0] = 0
+        
+    regional_hm = {}
+    for lbl_idx in np.unique(atlas):
+        # skip outside area
+        if lbl_idx != 0:
+            atlas_lbl = atlas.copy()
+            # get region mask for each label
+            atlas_lbl[lbl_idx!=atlas] = 0
+            atlas_lbl[lbl_idx==atlas] = 1
+            # multiply region mask with heatmap
+            region_intensity = np.mean(atlas_lbl * np.squeeze(signed_hm))
+            if size_normalize:
+                region_size = np.sum(atlas_lbl)
+                region_intensity /= region_size
+            regional_hm[lbl_idx] = region_intensity
+    return regional_hm
+
+def aggregate_regions(regional_hm, all_areas):
+    # aggregate atlas regions to previously defined areas
+    area_hm = {}
+    for name, (min_idx, max_idx) in all_areas.items():
+        regions_fit = []
+        for key in regional_hm.keys():
+            if key in range(min_idx, max_idx+1):
+                regions_fit.append(regional_hm[key])
+        region_mean = np.mean(regions_fit)
+        area_hm[name] = region_mean
+    return area_hm
