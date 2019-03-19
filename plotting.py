@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#from decimal import *
+import pandas as pd
 
 ms_color = [0.12156863, 0.46666667, 0.70588235, 1]
 hc_color = [1., 0.49803922, 0.05490196, 1]
@@ -83,14 +83,64 @@ def get_area_relevance(heatmaps, atlas, area_dict, positive=True, size_normalize
         values.append(values_sorted)
     return keys, values
 
+def translate_keys(keys):
+    names_list = []
+    for key_list in keys:
+        name_list = []
+        for key in key_list:
+            name_list.append(short_name_map[key])
+        names_list.append(name_list)
+    return names_list
+
+def wrap_as_df(keys, values):
+    df_ms = pd.DataFrame({"values_ms": values[0]}, keys[0])
+    df_hc = pd.DataFrame({"values_hc": values[1]}, keys[1])
+
+    df = pd.merge(df_ms, df_hc, left_index=True, right_index=True, how='outer')
+    return df
+
+def reduce_df(df, take=30):
+    # get order based on relevance sum
+    abs_order = (np.abs(df["values_hc"]) + np.abs(df["values_ms"])).sort_values().index
+    most = abs_order[-take:]
+    short_df = df.loc[most]
+    
+    order = (short_df["values_hc"] + short_df["values_ms"]).sort_values().index
+    short_df = df.loc[order]
+    return short_df
+
+def reduce_two_dfs(df_zero, df_one, take=30):
+    abs_order = (df_zero.abs().sum() + df_one.abs().sum()).sort_values().index
+    most = abs_order[-take:]
+
+    # columns are keys so use [:, key]
+    short_df_zero = df_zero.loc[:,most]
+    short_df_one = df_one.loc[:,most]
+    
+    order = (short_df_zero.sum() + short_df_one.sum()).sort_values().index
+    short_df_zero = short_df_zero.reindex(order, axis=1)
+    short_df_one = short_df_one.reindex(order, axis=1)
+    return short_df_zero, short_df_one
+
 def plot_key_value_pairs(keys, values, title, loc="center left"):
     plt.figure(figsize=(10, 6))
-    plt.plot(keys[0], values[0], 'o', color=ms_color, label="MS")
+    plt.plot(keys[0], values[0], 'o', color=ms_color, label="CDMS")
     plt.plot(keys[1], values[1], 'o', color=hc_color, label="HC")
     plt.xticks(rotation='vertical')
     plt.legend(loc=loc)
     plt.title(title)
     plt.show()
+
+def plot_dataframe(df, title, loc="center left"):
+    plt.figure(figsize=(10, 6))
+    plt.plot(df["values_ms"], 'o', color=ms_color, label="CDMS")
+    plt.plot(df["values_hc"], 'o', color=hc_color, label="HC")
+    plt.xticks(rotation='vertical')
+    plt.legend(loc=loc)
+    plt.title(title)
+    plt.show()
+
+
 
 # Modified areas from Visualizing evidence for AD paper by
 # Boehle et al. Based on Neuromorphometrics atlas from SPM12
@@ -101,19 +151,17 @@ gm_areas= {
     "Brain Stem": (35, 35),
     "Caudate": (36, 37),
     "Cerebellum": (38, 41),
-    "Cerebral White Matter": (44, 45),
-    "CSF" : (46, 46),
     "Hippocampus": (47, 48),
     "Parahippocampal gyrus": (170, 171),
     "Pallidum": (55, 56),
     "Putamen": (57, 58),
     "Thalamus": (59, 60),
-    "Diencephalon": (61, 62),
+    "CWM": (44, 45),
     "ACG": (100, 101),
-    "Anterior Insula": (102, 103),
-    "Posterior Insula": (172, 173),
+    "Ant. Insula": (102, 103),
+    "Post. Insula": (172, 173),
     "AOG": (104, 105),
-    "AAG": (106, 107),
+    "AG": (106, 107),
     "Cuneus": (114, 115),
     "Central operculum": (112, 113),
     "Frontal operculum": (118, 119),
@@ -122,9 +170,121 @@ gm_areas= {
     "Temporal pole": (202, 203),
     "TrIFG": (204, 205),
     "TTG": (206, 207),
-    "Ent": (116, 117),
+    "Entorh. cortex": (116, 117),
     "Parietal operculum": (174, 175),
     "SPL": (198, 199),
+    "CSF": (46, 46),
+    "3rd Ventricle": (4, 4),
+    "4th Ventricle": (11, 11),
+    "Lateral Ventricles": (49, 52),
+    "Diencephalon": (61, 62),
+    "Vessels": (63, 64),
+    "Optic Chiasm": (69, 69),
+    "Vermal Lobules": (71, 73),
+    "Basal Forebrain": (75, 76),
+    "Calc": (108, 109),
+    "GRe": (124, 125),
+    "IOG": (128, 129),
+    "ITG": (132, 133),
+    "LiG": (134, 135),
+    "LOrG": (136, 137),
+    "MCgG": (138, 139),
+    "MFC": (140, 141),
+    "MFG": (142, 143),
+    "MOG": (144, 145),
+    "MOrG": (146, 147),
+    "MPoG": (148, 149),
+    "MPrG": (150, 151),
+    "MSFG": (152, 153),
+    "MTG": (154, 155),
+    "OCP": (156, 157),
+    "OFuG": (160, 161),
+    "OpIFG": (162, 163),
+    "OrIFG": (164, 165),
+    "PCgG": (166, 167),
+    "PCu": (168, 169),
+    "PoG": (176, 177),
+    "POrG": (178, 179),
+    "PP": (180, 181),
+    "PrG": (182, 183),
+    "PT": (184, 185),
+    "SCA": (186, 187),
+    "SFG": (190, 191),
+    "SMC": (192, 193),
+    "SMG": (194, 195),
+    "SOG": (196, 197),
+    "STG": (200, 201),
+}
+
+short_name_map = {
+     'Accumbens': 'Accumbens',
+     'Amygdala': 'Amygdala',
+     'Brain Stem': 'Brain Stem',
+     'Caudate': 'Caudate',
+     'Cerebellum': 'Cerebellum',
+     'Hippocampus': 'Hippocampus',
+     'Parahippocampal gyrus': 'Parahippocampal gyr.',
+     'Pallidum': 'Pallidum',
+     'Putamen': 'Putamen',
+     'Thalamus': 'Thalamus',
+     'Diencephalon': 'Diencephalon',
+     'CWM': 'Cerebral white matter',
+     'ACG': 'Ant. cingulate gyr.',
+     'Ant. Insula': 'Ant. insula',
+     'Post. Insula': 'Post. insula',
+     'AOG': 'Ant. orbital gyr.',
+     'AG': 'Angular gyr.',
+     'Cuneus': 'Cuneus',
+     'Central operculum': 'Central operculum',
+     'Frontal operculum': 'Frontal operculum',
+     'Frontal pole': 'Frontal pole',
+     'Fusiform gyrus': 'Fusiform gyr.',
+     'Temporal pole': 'Temporal pole',
+     'TrIFG': 'Triangular part of IFG',
+     'TTG': 'Trans. temporal gyr.',
+     'Entorh. cortex': 'Entorhinal area',
+     'Parietal operculum': 'Parietal operculum',
+     'SPL': 'Sup. parietal lobule',
+     'CSF': 'CSF',
+     '3rd Ventricle': '3rd Ventricle',
+     '4th Ventricle': '4th Ventricle',
+     'Lateral Ventricles': 'Inf. Lat. Ventricles',
+     'Vessels': 'Vessels',
+     'Optic Chiasm': 'Optic Chiasm',
+     'Vermal Lobules': 'Cereb. Verm. Lob.',
+     'Basal Forebrain': 'Basal Forebrain',
+     'Calc': 'Calcarine cortex',
+     'GRe': 'Gyrus rectus',
+     'IOG': 'Inf. occipital gyr.',
+     'ITG': 'Inf. temporal gyr.',
+     'LiG': 'Lingual gyr.',
+     'LOrG': 'Lat. orbital gyr.',
+     'MCgG': 'Mid. cingulate gyr.',
+     'MFC': 'Med. frontal cortex',
+     'MFG': 'Mid. frontal gyr.',
+     'MOG': 'Mid. occipital gyr.',
+     'MOrG': 'Med. orbital gyr.',
+     'MPoG': 'Post. gyr. med. seg.',
+     'MPrG': 'Pre. gyr. med. seg.',
+     'MSFG': 'Sup. frontal gyr. med. seg.',
+     'MTG': 'Mid. temporal gyr.',
+     'OCP': 'Occipital pole',
+     'OFuG': 'Occipital fusiform gyr.',
+     'OpIFG': 'Opercular part of IFG',
+     'OrIFG': 'Orbital part of IFG',
+     'PCgG': 'Post. cingulate gyr.',
+     'PCu': 'Precuneus',
+     'PoG': 'Postcentral gyr.',
+     'POrG': 'Post. orbital gyr.',
+     'PP': 'Planum polare',
+     'PrG': 'Precentral gyr.',
+     'PT': 'Planum temporale',
+     'SCA': 'Subcallosal area',
+     'SFG': 'Sup. frontal gyr.',
+     'SMC': 'Supp. motor cortex',
+     'SMG': 'Supramarginal gyr.',
+     'SOG': 'Sup. occipital gyr.',
+     'STG': 'Sup. temporal gyr.'
 }
 
 # Aggregated white matter areas from JHU ICBM DTI atlas from FSL
