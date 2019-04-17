@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
 
 ms_color = [0.12156863, 0.46666667, 0.70588235, 1]
 hc_color = [1., 0.49803922, 0.05490196, 1]
@@ -19,6 +20,26 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 # set serif font
 plt.rc('font', family='serif')
+
+def generate_transparanet_cm(base='coolwarm', name="TransCoWa"):
+    # copy from existing colormap
+    ncolors = 256
+    color_array = plt.get_cmap(base)(range(ncolors))
+
+    # create parabolic decrease 
+    decr = [-1*(x**2)+1 for x in range(int(ncolors/2))]
+    # normalize
+    decr = (decr - np.min(decr))/(np.max(decr - np.min(decr)))
+
+    # use inverted parabola as increase
+    incr = np.copy(decr)[::-1]
+    alphas = np.concatenate((decr, incr))
+    # update alpha values
+    color_array[:,-1] = alphas
+
+    # create new colormap and register it
+    transparent_coolwarm = LinearSegmentedColormap.from_list(name, color_array)
+    plt.register_cmap(cmap=transparent_coolwarm)
 
 def get_labels_dict(path):
     import xmltodict
@@ -74,7 +95,7 @@ def get_area_relevance(heatmaps, atlas, area_dict, positive=True, size_normalize
     for hm in heatmaps:
         regional_hm = heatmap_per_region(hm, atlas, positive=positive, size_normalize=size_normalize)
         area_hm = aggregate_regions(regional_hm, area_dict)
-        # sort values
+        # sort by values
         area_hm_sorted = sorted(area_hm.items(), key=lambda kv: kv[1])
         keys_sorted = [row[0] for row in area_hm_sorted]
         values_sorted = [row[1] for row in area_hm_sorted]
