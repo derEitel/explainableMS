@@ -225,6 +225,10 @@ def shuffle_data(X, y):
 def replace_classifier(model, activation='softmax', units=2):
     """
     Replace the last layer of you model with a new Dense layer.
+    Note: layer parameters (weights, bias) will not be preserved! 
+    If you have trained weights load them after calling
+    replace_classifier.
+    
     Arguments:
         activation: new activation function
         units: number of outputs units, needs to be equal to 
