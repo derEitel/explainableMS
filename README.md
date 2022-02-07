@@ -26,3 +26,8 @@ If you found our paper or code relevant to your work, please cite our ([article]
 
 ## License
 Code is published under the BSD License 2.0.
+
+## Software versions
+Python 3.6.6
+Tensorflow 1.12.0
+Keras 2.2.4
